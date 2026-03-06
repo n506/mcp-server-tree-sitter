@@ -22,6 +22,7 @@ def node_to_dict(
     include_children: bool = True,
     include_text: bool = True,
     max_depth: int = 5,
+    compact: bool = False,
 ) -> Dict[str, Any]:
     """
     Convert a tree-sitter node to a dictionary representation.
@@ -36,10 +37,13 @@ def node_to_dict(
         include_children: Whether to include children nodes
         include_text: Whether to include node text
         max_depth: Maximum depth to traverse
+        compact: Whether to return a compact node summary without text or children
 
     Returns:
         Dictionary representation of the node
     """
+    if compact:
+        return summarize_node(node, source_bytes)
     # Use the cursor-based implementation for improved reliability
     return node_to_dict_cursor(node, source_bytes, include_children, include_text, max_depth)
 
@@ -58,12 +62,17 @@ def summarize_node(node: Any, source_bytes: Optional[bytes] = None) -> Dict[str,
     safe_node = ensure_node(node)
 
     result = {
+        "id": safe_node.id,
         "type": safe_node.type,
         "start_point": {
             "row": safe_node.start_point[0],
             "column": safe_node.start_point[1],
         },
         "end_point": {"row": safe_node.end_point[0], "column": safe_node.end_point[1]},
+        "start_byte": safe_node.start_byte,
+        "end_byte": safe_node.end_byte,
+        "named": safe_node.is_named,
+        "children_count": len(safe_node.children),
     }
 
     # Add a short text snippet if source is available

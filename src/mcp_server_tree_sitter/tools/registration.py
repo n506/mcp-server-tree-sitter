@@ -256,7 +256,13 @@ def register_tools(mcp_server: Any, container: DependencyContainer) -> None:
         )
 
     @mcp_server.tool()
-    def get_node_at_position(project: str, path: str, row: int, column: int) -> Optional[Dict[str, Any]]:
+    def get_node_at_position(
+        project: str,
+        path: str,
+        row: int,
+        column: int,
+        compact: bool = True,
+    ) -> Optional[Dict[str, Any]]:
         """Find the AST node at a specific position.
 
         Args:
@@ -264,9 +270,10 @@ def register_tools(mcp_server: Any, container: DependencyContainer) -> None:
             path: File path relative to project root
             row: Line number (0-based)
             column: Column number (0-based)
+            compact: Return compact node metadata without heavy children/text payload, default True
 
         Returns:
-            Node information or None if not found
+            A dictionary describing the syntax node or None if not found
         """
         from ..models.ast import node_to_dict
         from ..tools.ast_operations import find_node_at_position
@@ -284,7 +291,7 @@ def register_tools(mcp_server: Any, container: DependencyContainer) -> None:
 
         node = find_node_at_position(tree.root_node, row, column)
         if node:
-            return node_to_dict(node, source_bytes, max_depth=2)
+            return node_to_dict(node, source_bytes, max_depth=2, compact=compact)
 
         return None
 
