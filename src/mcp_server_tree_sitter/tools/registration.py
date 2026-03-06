@@ -6,7 +6,7 @@ removing the need for global variables or singletons.
 
 import logging
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from ..di import DependencyContainer
 from ..exceptions import ProjectError
@@ -460,7 +460,7 @@ def register_tools(mcp_server: Any, container: DependencyContainer) -> None:
     # Analysis Tools
     @mcp_server.tool()
     def get_symbols(
-        project: str, file_path: str, symbol_types: Optional[List[str]] = None
+        project: str, file_path: str, symbol_types: Optional[Union[List[str], str]] = None
     ) -> Dict[str, List[Dict[str, Any]]]:
         """Extract symbols from a file.
 
@@ -468,11 +468,26 @@ def register_tools(mcp_server: Any, container: DependencyContainer) -> None:
             project: Project name
             file_path: Path to the file
             symbol_types: Types of symbols to extract (functions, classes, imports, etc.)
+                "python": symbol_types = ["functions", "classes", "imports"]
+                "rust": symbol_types = ["functions", "structs", "imports"]
+                "go": symbol_types = ["functions", "structs", "imports"]
+                "c": symbol_types = ["functions", "structs", "imports"]
+                "cpp": symbol_types = ["functions", "classes", "structs", "imports"]
+                "typescript": symbol_types = ["functions", "classes", "interfaces", "imports"]
+                "swift": symbol_types = ["functions", "classes", "structs", "imports"]
+                "java": symbol_types = ["functions", "classes", "interfaces", "imports"]
+                "kotlin": symbol_types = ["functions", "classes", "interfaces", "imports"]
+                "julia": symbol_types = ["functions", "modules", "structs", "imports"]
+                "apl": symbol_types = ["functions", "namespaces", "variables", "imports"]
+                any other language: symbol_types = ["functions", "classes", "imports"]
 
         Returns:
             Dictionary of symbols by type
         """
         from ..tools.analysis import extract_symbols
+
+        if isinstance(symbol_types, str):
+            symbol_types = [s.strip() for s in symbol_types.split(",") if s.strip()]
 
         return extract_symbols(project_registry.get_project(project), file_path, language_registry, symbol_types)
 
