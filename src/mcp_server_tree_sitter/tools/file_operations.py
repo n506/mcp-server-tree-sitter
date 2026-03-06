@@ -4,6 +4,7 @@ import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from ..api import get_config
 from ..exceptions import FileAccessError, ProjectError
 from ..utils.path import iter_project_files_pruned
 from ..utils.security import validate_file_access
@@ -62,7 +63,10 @@ def list_project_files(
     if filter_extensions:
         filter_extensions = [ext.lower() for ext in filter_extensions]
 
-    for path in iter_project_files_pruned(root, pattern):
+    config = get_config()
+    excluded_dirs = config.security.excluded_dirs or []
+
+    for path in iter_project_files_pruned(root, pattern, excluded_dirs):
         # Skip files that don't match extension filter
         if filter_extensions and path.suffix.lower()[1:] not in filter_extensions:
             continue

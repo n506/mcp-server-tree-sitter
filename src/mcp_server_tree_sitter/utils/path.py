@@ -2,9 +2,7 @@
 
 import os
 from pathlib import Path, PurePosixPath
-from typing import Union, Iterable, Set
-
-from ..api import get_config
+from typing import Iterable, Union
 
 
 def normalize_path(path: Union[str, Path], ensure_absolute: bool = False) -> Path:
@@ -94,16 +92,18 @@ def get_project_root(path: Union[str, Path]) -> Path:
     return path_obj
 
 
-def iter_project_files_pruned(root: Path, pattern: str) -> Iterable[Path]:
+def iter_project_files_pruned(
+    root: Path,
+    pattern: str,
+    excluded_dirs: list[str] | set[str] | tuple[str, ...] | None = None,
+) -> Iterable[Path]:
     """
     Yield files under `root` matching `pattern`, while never descending into
     directories listed in config.security.excluded_dirs.
 
     Matching is performed against the relative POSIX path using glob semantics.
     """
-    config = get_config()
-    excluded: Set[str] = set(config.security.excluded_dirs or [])
-
+    excluded = set(excluded_dirs or [])
     normalized_pattern = (pattern or "**/*").replace("\\", "/")
 
     for current_dir, dirs, files in os.walk(root, topdown=True, followlinks=False):
