@@ -70,6 +70,7 @@ These commands handle project registration and management.
 | `remove_project_tool` | ✅ | None | Successfully removes registered projects |
 
 **Example Usage:**
+
 ```python
 # Register a project
 register_project_tool(path="/path/to/project", name="my-project", description="My awesome project")
@@ -91,6 +92,7 @@ These commands manage tree-sitter language parsers.
 | `check_language_available` | ✅ | None | Checks if a specific language is available via tree-sitter-language-pack |
 
 **Example Usage:**
+
 ```python
 # List all available languages
 list_languages()
@@ -110,6 +112,7 @@ These commands access and manipulate project files.
 | `get_file_metadata` | ✅ | Project registration | Returns file information including size, modification time, etc. |
 
 **Example Usage:**
+
 ```python
 # List Python files
 list_files(project="my-project", pattern="**/*.py")
@@ -130,14 +133,42 @@ These commands perform abstract syntax tree (AST) operations.
 | `get_ast` | ✅ | Project registration | Returns AST using efficient cursor-based traversal with proper node IDs |
 | `get_node_at_position` | ✅ | Project registration | Successfully retrieves nodes at a specific position in a file |
 
+#### Compact mode (recommended for LLM agents)
+
+Large AST nodes can produce very large responses because they may include recursive
+`children` structures and full node text. This can quickly consume LLM context windows.
+
+To avoid this, `get_node_at_position` supports a **compact mode** (default) that
+returns only essential metadata about the node.
+
 **Example Usage:**
+
 ```python
 # Get AST for a file
 get_ast(project="my-project", path="src/main.py", max_depth=5, include_text=True)
 
 # Find node at position
-get_node_at_position(project="my-project", path="src/main.py", row=10, column=5)
+get_node_at_position(
+    project="my-project",
+    path="src/main.py",
+    row=10,
+    column=5,
+    compact=true)
 ```
+
+Compact responses include:
+
+- `id`
+- node `type`
+- `start_point` / `end_point`
+- `start_byte` / `end_byte`
+- `children_count`
+- `named`
+- `children_count`
+
+This mode is **recommended for exploratory navigation or large files**.
+
+If full AST details are required set `compact` to `false`.
 
 ### Search and Query Commands
 
@@ -154,6 +185,7 @@ These commands search code and execute tree-sitter queries.
 | `get_node_types` | ✅ | None | Successfully returns descriptions of node types for a language |
 
 **Example Usage:**
+
 ```python
 # Find text in project files
 find_text(project="my-project", pattern="TODO", file_pattern="**/*.py")
@@ -187,6 +219,7 @@ These commands analyze code structure and complexity.
 | `find_usage` | ✅ | Project registration | Successfully finds usage of symbols across project files |
 
 **Example Usage:**
+
 ```python
 # Extract symbols from a file
 get_symbols(project="my-project", file_path="src/main.py")
@@ -222,6 +255,7 @@ These commands manage the service and its parse tree cache.
 | `diagnose_config` | ✅ | None | Diagnoses issues with YAML configuration loading |
 
 **Example Usage:**
+
 ```python
 # Clear all caches
 clear_cache()
