@@ -4,10 +4,12 @@ import os
 from collections import Counter, defaultdict
 from typing import Any, Dict, List, Optional, Set, Tuple
 
+from ..api import get_config
 from ..exceptions import SecurityError
 from ..language.query_templates import get_query_template
 from ..utils.context import MCPContext
 from ..utils.file_io import get_comment_prefix, read_text_file
+from ..utils.path import iter_project_files_pruned
 from ..utils.security import validate_file_access
 from ..utils.tree_sitter_helpers import (
     ensure_language,
@@ -529,6 +531,9 @@ def analyze_project_structure(
     # Detailed analysis of key files if scan_depth > 0
     key_files_analysis = {}
 
+    config = get_config()
+    excluded_dirs = config.security.excluded_dirs or []
+
     if scan_depth > 0:
         # Analyze a sample of files from each language
         for language, _ in languages.items():
@@ -542,7 +547,7 @@ def analyze_project_structure(
             for ext in extensions:
                 # Look for files with this extension
                 pattern = f"**/*.{ext}"
-                for path in root.glob(pattern):
+                for path in iter_project_files_pruned(root, pattern, excluded_dirs):
                     if path.is_file():
                         rel_path = str(path.relative_to(root))
                         sample_files.append(rel_path)

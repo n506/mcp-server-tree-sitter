@@ -1,8 +1,8 @@
 """Path utilities for mcp-server-tree-sitter."""
 
 import os
-from pathlib import Path
-from typing import Union
+from pathlib import Path, PurePosixPath
+from typing import Iterable, Union
 
 
 def normalize_path(path: Union[str, Path], ensure_absolute: bool = False) -> Path:
@@ -90,3 +90,29 @@ def get_project_root(path: Union[str, Path]) -> Path:
 
     # If no marker found, return original directory
     return path_obj
+
+
+def iter_project_files_pruned(
+    root: Path,
+    pattern: str,
+    excluded_dirs: list[str] | set[str] | tuple[str, ...] | None = None,
+) -> Iterable[Path]:
+    """
+    Yield files under `root` matching `pattern`, while never descending into
+    directories listed in config.security.excluded_dirs.
+
+    Matching is performed against the relative POSIX path using glob semantics.
+    """
+    excluded = set(excluded_dirs or [])
+    normalized_pattern = (pattern or "**/*").replace("\\", "/")
+
+    for current_dir, dirs, files in os.walk(root, topdown=True, followlinks=False):
+        dirs[:] = [d for d in dirs if d not in excluded]
+
+        current_path = Path(current_dir)
+        for filename in files:
+            file_path = current_path / filename
+            rel_path = file_path.relative_to(root).as_posix()
+
+            if PurePosixPath(rel_path).match(normalized_pattern):
+                yield file_path

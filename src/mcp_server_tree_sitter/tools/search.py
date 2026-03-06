@@ -5,7 +5,9 @@ import re
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from ..api import get_config
 from ..exceptions import QueryError, SecurityError
+from ..utils.path import iter_project_files_pruned
 from ..utils.security import validate_file_access
 from ..utils.tree_sitter_helpers import execute_query_captures
 
@@ -118,10 +120,9 @@ def search_text(
         return file_results
 
     # Collect files to process
-    files_to_process = []
-    for path in root.glob(file_pattern):
-        if path.is_file():
-            files_to_process.append(path)
+    config = get_config()
+    excluded_dirs = config.security.excluded_dirs or []
+    files_to_process = list(iter_project_files_pruned(root, file_pattern, excluded_dirs))
 
     # Process files in parallel
     with concurrent.futures.ThreadPoolExecutor() as executor:
@@ -314,11 +315,13 @@ def query_code(
                 return []
 
         # Collect files to process
+        config = get_config()
+        excluded_dirs = config.security.excluded_dirs or []
+
         files_to_process = []
         for ext, _ in extensions:
-            for path in root.glob(f"**/*.{ext}"):
-                if path.is_file():
-                    files_to_process.append(str(path.relative_to(root)))
+            for path in iter_project_files_pruned(root, f"**/*.{ext}", excluded_dirs):
+                files_to_process.append(str(path.relative_to(root)))
 
         # Process files until we reach max_results
         for file in files_to_process:
