@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from ..exceptions import FileAccessError, ProjectError
+from ..utils.path import iter_project_files_pruned
 from ..utils.security import validate_file_access
 
 logger = logging.getLogger(__name__)
@@ -61,15 +62,12 @@ def list_project_files(
     if filter_extensions:
         filter_extensions = [ext.lower() for ext in filter_extensions]
 
-    for path in root.glob(pattern):
-        if path.is_file():
-            # Skip files that don't match extension filter
-            if filter_extensions and path.suffix.lower()[1:] not in filter_extensions:
-                continue
-
-            # Get path relative to project root
-            rel_path = path.relative_to(root)
-            files.append(str(rel_path))
+    for path in iter_project_files_pruned(root, pattern):
+        # Skip files that don't match extension filter
+        if filter_extensions and path.suffix.lower()[1:] not in filter_extensions:
+            continue
+        rel_path = path.relative_to(root)
+        files.append(str(rel_path))
 
     return sorted(files)
 
